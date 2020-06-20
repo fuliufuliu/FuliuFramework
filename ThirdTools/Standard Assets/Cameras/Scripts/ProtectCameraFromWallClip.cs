@@ -22,6 +22,7 @@ namespace UnityStandardAssets.Cameras
         private Ray m_Ray = new Ray();                        // the ray used in the lateupdate for casting between the camera and the target
         private RaycastHit[] m_Hits;              // the hits between the camera and the target
         private RayHitComparer m_RayHitComparer;  // variable to compare raycast hit distances
+        public float verticalOffsetScale = 0.5f;
 
 
         private void Start()
@@ -107,8 +108,15 @@ namespace UnityStandardAssets.Cameras
             protecting = hitSomething;
             m_CurrentDist = Mathf.SmoothDamp(m_CurrentDist, targetDist, ref m_MoveVelocity,
                                            m_CurrentDist > targetDist ? clipMoveTime : returnTime);
+
+            var _closestDistance = Mathf.Clamp(closestDistance * (1 - Input.mouseScrollDelta.y * 0.1f), 3f, 200f);
+            if (_closestDistance != closestDistance)
+            {
+                closestDistance = _closestDistance;
+                print($"_closestDistance: {_closestDistance}");
+            }
             m_CurrentDist = Mathf.Clamp(m_CurrentDist, closestDistance, m_OriginalDist);
-            m_Cam.localPosition = (-Vector3.forward + Vector3.up * 0.5f) * m_CurrentDist;
+            m_Cam.localPosition = (-Vector3.forward + Vector3.up * verticalOffsetScale) * m_CurrentDist;
         }
 
 
