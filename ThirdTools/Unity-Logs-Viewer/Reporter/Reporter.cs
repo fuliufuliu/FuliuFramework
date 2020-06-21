@@ -1,21 +1,29 @@
-#if UNITY_CHANGE1 || UNITY_CHANGE2 || UNITY_CHANGE3
-    #warning UNITY_CHANGE has been set manually
+#if UNITY_CHANGE1 || UNITY_CHANGE2 || UNITY_CHANGE3 || UNITY_CHANGE4
+#warning UNITY_CHANGE has been set manually
 #elif UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_4_7
-    #define UNITY_CHANGE1
+#define UNITY_CHANGE1
 #elif UNITY_5_0 || UNITY_5_1 || UNITY_5_2
-    #define UNITY_CHANGE2
+#define UNITY_CHANGE2
 #else
-    #define UNITY_CHANGE3
+#define UNITY_CHANGE3
+#endif
+#if UNITY_2018_3_OR_NEWER
+#define UNITY_CHANGE4
 #endif
 //use UNITY_CHANGE1 for unity older than "unity 5"
 //use UNITY_CHANGE2 for unity 5.0 -> 5.3 
-//use UNITY_CHANGE3 for unity 5.3 (fix for new SceneManger system  )
-
+//use UNITY_CHANGE3 for unity 5.3 (fix for new SceneManger system)
+//use UNITY_CHANGE4 for unity 2018.3 (Networking system)
 
 using UnityEngine;
+using System.IO;
+using System.Collections;
 using System.Collections.Generic;
 #if UNITY_CHANGE3
 using UnityEngine.SceneManagement;
+#endif
+#if UNITY_CHANGE4
+using UnityEngine.Networking;
 #endif
 
 
@@ -33,8 +41,11 @@ public class Images
 	public Texture2D dateImage;
 	public Texture2D showFpsImage;
 	public Texture2D infoImage;
-	public Texture2D searchImage;
-	public Texture2D closeImage;
+    public Texture2D saveLogsImage; 
+    public Texture2D searchImage;
+    public Texture2D copyImage;
+    public Texture2D copyAllImage;
+    public Texture2D closeImage;
 
 	public Texture2D buildFromImage;
 	public Texture2D systemInfoImage;
@@ -60,8 +71,7 @@ public class Images
 //Now to view logs all what you have to do is to make a circle gesture using your mouse (click and drag) 
 //or your finger (touch and drag) on the screen to show all these logs
 //no coding is required 
-[RequireComponent(typeof(ReporterMessageReceiver))]
-[DisallowMultipleComponent]
+
 public class Reporter : MonoBehaviour
 {
 
@@ -89,14 +99,14 @@ public class Reporter : MonoBehaviour
 
 		public string GetSceneName()
 		{
-			if ((int)loadedScene == -1)
+			if (loadedScene == 255)
 				return "AssetBundleScene";
 
 			return scenes[loadedScene];
 		}
 	}
 
-	List<Sample> samples = new List<Sample>(60 * 60 * 60);
+	List<Sample> samples = new List<Sample>();
 
 	public class Log
 	{
@@ -181,8 +191,11 @@ public class Reporter : MonoBehaviour
 	bool showMemButton = true;
 	bool showFpsButton = true;
 	bool showSearchText = true;
+    bool showCopyButton = true;
+    bool showCopyAllButton = true;
+    bool showSaveButton = true;
 
-	public string buildDate;
+    string buildDate;
 	string logDate;
 	float logsMemUsage;
 	float graphMemUsage;
@@ -236,8 +249,11 @@ public class Reporter : MonoBehaviour
 	GUIContent showFpsContent;
 	//GUIContent graphContent;
 	GUIContent infoContent;
+    GUIContent saveLogsContent;
 	GUIContent searchContent;
-	GUIContent closeContent;
+    GUIContent copyContent;
+    GUIContent copyAllContent;
+    GUIContent closeContent;
 
 	GUIContent buildFromContent;
 	GUIContent systemInfoContent;
@@ -271,7 +287,7 @@ public class Reporter : MonoBehaviour
 
 	public Vector2 size = new Vector2(32, 32);
 	public float maxSize = 20;
-	public int numOfCircleToShow = 10;
+	public int numOfCircleToShow = 1;
 	static string[] scenes;
 	string currentScene;
 	string filterText = "";
@@ -289,9 +305,20 @@ public class Reporter : MonoBehaviour
 	{
 		if (!Initialized)
 			Initialize();
-	}
 
-	void OnEnable()
+#if UNITY_CHANGE3
+        SceneManager.sceneLoaded += _OnLevelWasLoaded;
+#endif
+    }
+
+    private void OnDestroy()
+    {
+#if UNITY_CHANGE3
+        SceneManager.sceneLoaded -= _OnLevelWasLoaded;
+#endif
+    }
+
+    void OnEnable()
 	{
 		if (logs.Count == 0)//if recompile while in play mode
 			clear();
@@ -366,8 +393,11 @@ public class Reporter : MonoBehaviour
 		dateContent = new GUIContent("", images.dateImage, "Date");
 		showFpsContent = new GUIContent("", images.showFpsImage, "Show Hide fps");
 		infoContent = new GUIContent("", images.infoImage, "Information about application");
-		searchContent = new GUIContent("", images.searchImage, "Search for logs");
-		closeContent = new GUIContent("", images.closeImage, "Hide logs");
+        saveLogsContent = new GUIContent("", images.saveLogsImage, "Save logs to device");
+        searchContent = new GUIContent("", images.searchImage, "Search for logs");
+        copyContent = new GUIContent("", images.copyImage, "Copy log to clipboard");
+        copyAllContent = new GUIContent("", images.copyAllImage, "Copy all logs to clipboard");
+        closeContent = new GUIContent("", images.closeImage, "Hide logs");
 		userContent = new GUIContent("", images.userImage, "User");
 
 		buildFromContent = new GUIContent("", images.buildFromImage, "Build From");
@@ -404,9 +434,12 @@ public class Reporter : MonoBehaviour
 		showMemButton = (PlayerPrefs.GetInt("Reporter_showMemButton", 1) == 1) ? true : false;
 		showFpsButton = (PlayerPrefs.GetInt("Reporter_showFpsButton", 1) == 1) ? true : false;
 		showSearchText = (PlayerPrefs.GetInt("Reporter_showSearchText", 1) == 1) ? true : false;
+        showCopyButton = (PlayerPrefs.GetInt("Reporter_showCopyButton", 1) == 1) ? true : false;
+        showCopyAllButton = (PlayerPrefs.GetInt("Reporter_showCopyAllButton", 1) == 1) ? true : false;
+        showSaveButton = (PlayerPrefs.GetInt("Reporter_showSaveButton", 1) == 1) ? true : false;
 
 
-		initializeStyle();
+        initializeStyle();
 
 		Initialized = true;
 
@@ -568,8 +601,7 @@ public class Reporter : MonoBehaviour
 	void Start()
 	{
 		logDate = System.DateTime.Now.ToString();
-        //		StartCoroutine("readInfo");
-	    buildDate = "deviceUniqueIdentifier:" + SystemInfo.deviceUniqueIdentifier;
+		StartCoroutine("readInfo");
 	}
 
 	//clear all logs
@@ -594,16 +626,16 @@ public class Reporter : MonoBehaviour
 		selectedLog = null;
 	}
 
-	Rect screenRect;
-	Rect toolBarRect;
-	Rect logsRect;
-	Rect stackRect;
-	Rect graphRect;
-	Rect graphMinRect;
-	Rect graphMaxRect;
-	Rect buttomRect;
+	Rect screenRect = Rect.zero;
+	Rect toolBarRect = Rect.zero;
+	Rect logsRect = Rect.zero;
+	Rect stackRect = Rect.zero;
+	Rect graphRect = Rect.zero;
+	Rect graphMinRect = Rect.zero;
+	Rect graphMaxRect = Rect.zero;
+	Rect buttomRect = Rect.zero ;
 	Vector2 stackRectTopLeft;
-	Rect detailRect;
+	Rect detailRect = Rect.zero;
 
 	Vector2 scrollPosition;
 	Vector2 scrollPosition2;
@@ -687,15 +719,15 @@ public class Reporter : MonoBehaviour
 		}
 	}
 
-	Rect countRect;
-	Rect timeRect;
-	Rect timeLabelRect;
-	Rect sceneRect;
-	Rect sceneLabelRect;
-	Rect memoryRect;
-	Rect memoryLabelRect;
-	Rect fpsRect;
-	Rect fpsLabelRect;
+	Rect countRect = Rect.zero;
+	Rect timeRect = Rect.zero;
+	Rect timeLabelRect = Rect.zero;
+	Rect sceneRect = Rect.zero;
+	Rect sceneLabelRect = Rect.zero;
+	Rect memoryRect = Rect.zero;
+	Rect memoryLabelRect = Rect.zero;
+	Rect fpsRect = Rect.zero;
+	Rect fpsLabelRect = Rect.zero;
 	GUIContent tempContent = new GUIContent();
 
 
@@ -926,7 +958,19 @@ public class Reporter : MonoBehaviour
 		if (GUILayout.Button(searchContent, (showSearchText) ? buttonActiveStyle : barStyle, GUILayout.Width(size.x * 2), GUILayout.Height(size.y * 2))) {
 			showSearchText = !showSearchText;
 		}
-		tempRect = GUILayoutUtility.GetLastRect();
+        if (GUILayout.Button(copyContent, (showCopyButton) ? buttonActiveStyle : barStyle, GUILayout.Width(size.x * 2), GUILayout.Height(size.y * 2)))
+        {
+            showCopyButton = !showCopyButton;
+        }
+        if (GUILayout.Button(copyAllContent, (showCopyAllButton) ? buttonActiveStyle : barStyle, GUILayout.Width(size.x * 2), GUILayout.Height(size.y * 2)))
+        {
+            showCopyAllButton = !showCopyAllButton;
+        }
+        if (GUILayout.Button(saveLogsContent, (showSaveButton) ? buttonActiveStyle : barStyle, GUILayout.Width(size.x * 2), GUILayout.Height(size.y * 2)))
+        {
+            showSaveButton = !showSaveButton;
+        }
+        tempRect = GUILayoutUtility.GetLastRect();
 		GUI.TextField(tempRect, filterText, searchStyle);
 
 
@@ -1044,13 +1088,46 @@ public class Reporter : MonoBehaviour
 			}
 		}
 
-		if (GUILayout.Button(infoContent, barStyle, GUILayout.Width(size.x * 2), GUILayout.Height(size.y * 2))) {
+        if (showCopyButton)
+        {
+            if (GUILayout.Button(copyContent, barStyle, GUILayout.Width(size.x * 2), GUILayout.Height(size.y * 2)))
+            {
+                if (selectedLog == null)
+                    GUIUtility.systemCopyBuffer = "No log selected";
+                else
+                    GUIUtility.systemCopyBuffer = selectedLog.condition + System.Environment.NewLine + System.Environment.NewLine  + selectedLog.stacktrace;
+            }
+        }
+
+        if (showCopyAllButton)
+        {
+            if (GUILayout.Button(copyAllContent, barStyle, GUILayout.Width(size.x * 2), GUILayout.Height(size.y * 2)))
+            {
+                string allLogsToClipboard = string.Empty;
+                logs.ForEach(l => allLogsToClipboard += l.condition + System.Environment.NewLine + System.Environment.NewLine + l.stacktrace);
+
+                if(string.IsNullOrWhiteSpace(allLogsToClipboard))
+                    GUIUtility.systemCopyBuffer = "No log selected";
+                else
+                    GUIUtility.systemCopyBuffer = allLogsToClipboard;
+            }
+        }
+
+        if (showSaveButton)
+        {
+            if (GUILayout.Button(saveLogsContent, barStyle, GUILayout.Width(size.x * 2), GUILayout.Height(size.y * 2)))
+            {
+                SaveLogsToDevice();
+            }
+        }
+
+        if (GUILayout.Button(infoContent, barStyle, GUILayout.Width(size.x * 2), GUILayout.Height(size.y * 2))) {
 			currentView = ReportView.Info;
 		}
+       
 
 
-
-		GUILayout.FlexibleSpace();
+        GUILayout.FlexibleSpace();
 
 
 		string logsText = " ";
@@ -1785,19 +1862,17 @@ public class Reporter : MonoBehaviour
 		gcTotalMemory = (((float)System.GC.GetTotalMemory(false)) / 1024 / 1024);
 		//addSample();
 
-	    if (scenes != null)
-	    {
 #if UNITY_CHANGE3
-	        int sceneIndex = SceneManager.GetActiveScene().buildIndex;
-	        if (sceneIndex != -1 && string.IsNullOrEmpty(scenes[sceneIndex]))
-	            scenes[SceneManager.GetActiveScene().buildIndex] = SceneManager.GetActiveScene().name;
+		int sceneIndex = SceneManager.GetActiveScene().buildIndex ;
+		if( sceneIndex != -1 && string.IsNullOrEmpty( scenes[sceneIndex] ))
+			scenes[ SceneManager.GetActiveScene().buildIndex ] = SceneManager.GetActiveScene().name ;
 #else
-		    int sceneIndex = Application.loadedLevel;
-		    if (sceneIndex != -1 && string.IsNullOrEmpty(scenes[Application.loadedLevel]))
-			    scenes[Application.loadedLevel] = Application.loadedLevelName;
+		int sceneIndex = Application.loadedLevel;
+		if (sceneIndex != -1 && string.IsNullOrEmpty(scenes[Application.loadedLevel]))
+			scenes[Application.loadedLevel] = Application.loadedLevelName;
 #endif
-	    }
-	    calculateStartIndex();
+
+		calculateStartIndex();
 		if (!show && isGestureDone()) {
 			doShow();
 		}
@@ -1957,8 +2032,20 @@ public class Reporter : MonoBehaviour
 		}
 	}
 
-	//new scene is loaded
-	void OnLevelWasLoaded()
+#if !UNITY_CHANGE3
+    class Scene
+    {
+    }
+    class LoadSceneMode
+    {
+    }
+    void OnLevelWasLoaded()
+    {
+        _OnLevelWasLoaded( null );
+    }
+#endif
+    //new scene is loaded
+    void _OnLevelWasLoaded( Scene _null1 , LoadSceneMode _null2 )
 	{
 		if (clearOnNewSceneLoaded)
 			clear();
@@ -2001,36 +2088,58 @@ public class Reporter : MonoBehaviour
 	}
 
 	//read build information 
-//	IEnumerator readInfo()
-//	{
-//		string prefFile = "build_info.txt";
-//		string url = prefFile;
-//
-//		if (prefFile.IndexOf("://") == -1) {
-//			string streamingAssetsPath = Application.streamingAssetsPath;
-//			if (streamingAssetsPath == "")
-//				streamingAssetsPath = Application.dataPath + "/StreamingAssets/";
-//			url = System.IO.Path.Combine(streamingAssetsPath, prefFile);
-//		}
-//
-//		if (Application.platform != RuntimePlatform.OSXWebPlayer && Application.platform != RuntimePlatform.WindowsWebPlayer)
-//			if (!url.Contains("://"))
-//				url = "file://" + url;
-//
-//
-//		// float startTime = Time.realtimeSinceStartup;
-//		WWW www = new WWW(url);
-//		yield return www;
-//
-//		if (!string.IsNullOrEmpty(www.error)) {
-//			Debug.LogError(www.error);
-//		}
-//		else {
-//			buildDate = www.text;
-//		}
-//
-//		yield break;
-//	}
+	IEnumerator readInfo()
+	{
+		string prefFile = "build_info"; 
+		string url = prefFile; 
+
+		if (prefFile.IndexOf("://") == -1) {
+			string streamingAssetsPath = Application.streamingAssetsPath;
+			if (streamingAssetsPath == "")
+				streamingAssetsPath = Application.dataPath + "/StreamingAssets/";
+			url = System.IO.Path.Combine(streamingAssetsPath, prefFile);
+		}
+
+		//if (Application.platform != RuntimePlatform.OSXWebPlayer && Application.platform != RuntimePlatform.WindowsWebPlayer)
+			if (!url.Contains("://"))
+				url = "file://" + url;
+
+
+		// float startTime = Time.realtimeSinceStartup;
+#if UNITY_CHANGE4
+		UnityWebRequest www = UnityWebRequest.Get(url);
+		yield return www.SendWebRequest();
+#else
+		WWW www = new WWW(url);
+		yield return www;
+#endif
+
+		if (!string.IsNullOrEmpty(www.error)) {
+			Debug.LogError(www.error);
+		}
+		else {
+#if UNITY_CHANGE4
+			buildDate = www.downloadHandler.text;
+#else
+			buildDate = www.text;
+#endif
+		}
+
+		yield break;
+	}
+
+    private void SaveLogsToDevice()
+    {
+        string filePath = Application.persistentDataPath + "/logs.txt";
+        List<string> fileContentsList = new List<string>();
+        Debug.Log("Saving logs to " + filePath);
+        File.Delete(filePath);
+        for (int i = 0; i < logs.Count; i++)
+        {
+            fileContentsList.Add(logs[i].logType + "\n" + logs[i].condition + "\n" + logs[i].stacktrace);
+        }
+        File.WriteAllLines(filePath, fileContentsList.ToArray());
+    }
 }
 
 

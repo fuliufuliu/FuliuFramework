@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
+using System.Collections;
 
-[DisallowMultipleComponent]
 public class ReporterMessageReceiver : MonoBehaviour
 {
 	Reporter reporter;
@@ -31,12 +31,12 @@ public class ReporterMessageReceiver : MonoBehaviour
 
 	void OnShowReporter()
 	{
-        //TO DO : pause your game and disable its GUI
-    }
+		//TO DO : pause your game and disable its GUI
+	}
 
 	void OnLog(Reporter.Log log)
 	{
-        //TO DO : put you custom code 
-    }
+		//TO DO : put you custom code 
+	}
 
 }
