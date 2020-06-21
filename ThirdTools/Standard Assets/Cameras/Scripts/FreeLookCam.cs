@@ -56,6 +56,11 @@ namespace UnityStandardAssets.Cameras
         private bool isPointedUI;
         public float hOffset = 0;
         public float vOffset = -20;
+        public bool isCanDragOnUI = true;
+        [Tooltip("是否右键可以拖动")]
+        public bool isCanRightButtonDrag = true;
+        [Tooltip("是否左键可以拖动")]
+        public bool isCanLeftButtonDrag = true;
 
         public void ResetRotateLookAngle()
         {
@@ -133,7 +138,7 @@ namespace UnityStandardAssets.Cameras
 			            {
 				            fingerTouchDic[touch.fingerId] = EventSystem.current.IsPointerOverGameObject(touch.fingerId);
 			            }
-			            if (! fingerTouchDic[touch.fingerId])
+			            if (! isCanDragOnUI && ! fingerTouchDic[touch.fingerId])
 			            {
 				            x += touch.deltaPosition.x * 0.04f;
 				            y += touch.deltaPosition.y * 0.04f;
@@ -144,14 +149,14 @@ namespace UnityStandardAssets.Cameras
             }
             else
             {
-	            if (Input.GetMouseButtonDown(0))
+	            if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1))
 	            {
 		            isPointedUI = EventSystem.current.IsPointerOverGameObject();
 	            }
 	            
-	            if (Input.GetMouseButton(0))
+	            if ((isCanLeftButtonDrag && Input.GetMouseButton(0)) || (Input.GetMouseButton(1) && isCanRightButtonDrag))
 	            {
-		            if (isPointedUI)
+		            if (! isCanDragOnUI && isPointedUI)
 		            {
 			            x = y = 0;
 		            }

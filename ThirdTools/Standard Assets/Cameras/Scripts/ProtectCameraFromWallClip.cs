@@ -113,7 +113,7 @@ namespace UnityStandardAssets.Cameras
             if (_closestDistance != closestDistance)
             {
                 closestDistance = _closestDistance;
-                print($"_closestDistance: {_closestDistance}");
+                // print($"_closestDistance: {_closestDistance}");
             }
             m_CurrentDist = Mathf.Clamp(m_CurrentDist, closestDistance, m_OriginalDist);
             m_Cam.localPosition = (-Vector3.forward + Vector3.up * verticalOffsetScale) * m_CurrentDist;
