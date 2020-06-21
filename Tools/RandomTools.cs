@@ -67,4 +67,41 @@ public static class RandomTools
             return rand;
         }
     }
+    
+    
+    /// <summary>
+    /// 随机选取列表中的指定个数的元素
+    /// </summary>
+    public static List<T> RandomSelect<T>(this List<T> list, int needCount, bool isCanRepeat = false)
+    {
+        var res = new List<T>();
+        if (list == null || list.Count == 0)
+        {
+            return res;
+        }
+        if (isCanRepeat)
+        {
+            for (int i = 0; i < needCount; i++)
+            {
+                res.Add(list[Random.Range(0, list.Count)]);
+            }
+            return res;
+        }
+        if (list.Count <= needCount)
+        {
+            return list;
+        }
+            
+        // 利用集合来去重
+        var indexSet = new HashSet<int>();
+        while (indexSet.Count < needCount)
+        {
+            indexSet.Add(Random.Range(0, list.Count));
+        }
+        foreach (var index in indexSet)
+        {
+            res.Add(list[index]);
+        }
+        return res;
+    }
 }

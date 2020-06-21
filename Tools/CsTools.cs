@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using Random = UnityEngine.Random;
 
 namespace fuliu
 {
@@ -19,8 +21,16 @@ namespace fuliu
         {
             return obj as T;
         }
-
         
+        
+        /// <summary>
+        /// 假设有一个字典，其value为列表，获取所有列表中元素数量之和
+        /// </summary>
+        public static int GetValueItemCount<T, T1>(this Dictionary<T, List<T1>> dic)
+        {
+            return dic?.Sum(pair => pair.Value?.Count ?? 0) ?? 0;
+        }
+       
         /// <summary>
         /// 获取一个正整数由哪几个 2的n次方数相加组成，把这几个数的次方数组成的列表返回
         /// </summary>
