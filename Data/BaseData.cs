@@ -1,8 +1,8 @@
 
 public class BaseData
 {
-    public void Save(bool isSaveNow = false)
+    public void Save(IDataManager dataManager, bool isSaveNow = false)
     {
-        DataManager.Instance.Save(this, isSaveNow);
+        dataManager.Save(this, isSaveNow);
     }
 }

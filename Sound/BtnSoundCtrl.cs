@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace _Game.Scripts.Framework.Sound
+namespace __Example__
 {
     [RequireComponent(typeof(AudioSource))]
     public class BtnSoundCtrl : MonoBehaviour
@@ -19,7 +19,7 @@ namespace _Game.Scripts.Framework.Sound
 
         public void OnPlaySound()
         {
-            if (DataManager.Instance.settingData.isOpenSound)
+            if (MyDataManager.Instance.settingData.isOpenSound)
             {
                 myAudioSource.clip = clip;
                 myAudioSource.loop = false;

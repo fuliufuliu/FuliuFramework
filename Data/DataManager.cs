@@ -2,7 +2,12 @@
 using fuliu.Schedule;
 using UnityEngine;
 
-public abstract class DataManager : SingleBhv<DataManager>
+public interface IDataManager
+{
+    void Save<T>(T obj, bool isSaveNow = false) where T : new();
+}
+
+public abstract class DataManager<T> : SingleBhv<T>, IDataManager  where T : MonoBehaviour
 {
     public bool isClearOnStart = false;
     
@@ -117,11 +122,10 @@ public abstract class DataManager : SingleBhv<DataManager>
 
 namespace __Example__
 {
-    public class MyDataManager : DataManager
+    public class MyDataManager : DataManager<MyDataManager>
     {
         public PlayerData playerData;
         public GlobalData globalData;
-
 
         protected override void OnLoad()
         {
@@ -131,14 +135,14 @@ namespace __Example__
 
         protected override void OnSaveAll()
         {
-            playerData.Save();
-            globalData.Save();
+            playerData.Save(this);
+            globalData.Save(this);
         }
     }
 
     public class PlayerData : BaseData
     {
-        
+        public string filePath;
     }
     
     public class GlobalData : BaseData
