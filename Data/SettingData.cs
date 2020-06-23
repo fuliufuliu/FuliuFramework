@@ -2,7 +2,7 @@
 using System;
 
 [Serializable]
-public class SettingData : BaseData
+public partial class SettingData : BaseData
 {
     /// <summary>
     /// 是否开发陀螺仪

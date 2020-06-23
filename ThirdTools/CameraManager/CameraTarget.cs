@@ -1,12 +1,10 @@
-﻿using System;
-using UnityEngine;
-using UnityEngine.Serialization;
+﻿using UnityEngine;
 
 public class CameraTarget : MonoBehaviour
 {
     private Vector3 lastMousePosition;
     public Camera myCamera;
-    private float dragScale = -0.002f;
+    private float dragScale = -0.001f;
     [Tooltip("是否右键可以拖动")]
     public bool isCanRightButtonDrag = true;
     [Tooltip("是否左键可以拖动")]
