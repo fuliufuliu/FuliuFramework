@@ -10,3 +10,7 @@ public class ToggleCallAttribute : Attribute
     
 }
 
+public class SliderCallAttribute : Attribute
+{
+    
+}
