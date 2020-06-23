@@ -83,6 +83,28 @@ namespace fuliu.pseudocode
             }
             return defaultValue;
         }
+
+        public static List<object> GetList(this object obj)
+        {
+            if (obj is IList)
+            {
+                var o = (IList) obj;
+                return o.Cast<object>().ToList();
+            }
+
+            return null;
+        }
+        
+        public static List<T> GetList<T>(this object obj)
+        {
+            if (obj is IList)
+            {
+                var o = (IList) obj;
+                return o.Cast<T>().ToList();
+            }
+
+            return null;
+        }
         
         public static void IsGreaterOrEqualsTo(Pseudocode Pseudocode, string funcName, Action<object> callback, object[] parameters, object[] commonParameters)
         {
@@ -141,7 +163,7 @@ namespace fuliu.pseudocode
                 callback?.Invoke(Pseudocode.vars[varName]);
             else
             {
-                Debug.LogError($"不存在变量：{varName}");
+                Debug.LogError($"不存在变量：{varName} ---- {funcName}");
             }
         }
         
@@ -289,7 +311,7 @@ namespace fuliu.pseudocode
         /// </summary>
         public static void Foreach(Pseudocode Pseudocode, string funcName, Action<object> callback, object[] parameters, object[] commonParameters)
         {
-            IList<object> list = (IList<object>)parameters[0];
+            IList<object> list = parameters[0].GetList();
             var mList = list.ToList();
             PseudocodeAction act = (PseudocodeAction) parameters[1];
             string loopId = parameters.GetItem(2).GetStr();
@@ -319,32 +341,36 @@ namespace fuliu.pseudocode
             }
         }
         
+        public static void GetLoopVar(Pseudocode Pseudocode, string funcName, Action<object> callback, object[] parameters, object[] commonParams)
+        {
+            string varName = (string)parameters[0];
+            GetVar(Pseudocode, funcName, callback, new []{varName}, commonParams);
+        }
+        
         /// <summary>
         /// 按固定时间周期做某事
         /// </summary>
         public static void Loop(Pseudocode Pseudocode, string funcName, Action<object> callback, object[] parameters, object[] commonParameters)
         {
             int loopCount = parameters[0].GetInt();
-            float duration = parameters[1].GetFloat();
-            PseudocodeAction LoopDoSth = (PseudocodeAction) parameters[2];
-            string loopId = parameters.GetItem(3).GetStr();
+            float startTime = parameters[1].GetFloat();
+            float duration = parameters[2].GetFloat();
+            PseudocodeAction LoopDoSth = (PseudocodeAction) parameters[3];
+            if (!LoopDoSth)Debug.LogError("Loop 方法第4个参数只接受NewAction方法返回的参数！");
+            string loopId = parameters.GetItem(4).GetStr();
 
-            if (!LoopDoSth)
-            {
-                Debug.LogError("Loop 方法第3个参数只接受NewAction方法返回的参数！");
-            }
 
             CoroutineHelper.Instance.StartCoroutine(LoopCor(Pseudocode, funcName, callback, 
-                loopCount, duration, LoopDoSth, loopId, commonParameters));
+                loopCount, startTime, duration, LoopDoSth, loopId, commonParameters));
         }
 
         private static IEnumerator LoopCor(Pseudocode Pseudocode, string funcName, Action<object> callback, 
-            int loopCount, float duration, PseudocodeAction act, string loopId, object[] commonParameters)
+            int loopCount, float startTime, float duration, PseudocodeAction act, string loopId, object[] commonParameters)
         {
+            yield return new WaitForSeconds(startTime);
             var cur = 0;
             while (cur < loopCount || loopCount == -1)
             {
-                yield return new WaitForSeconds(duration);
                 if (loopId != null)
                 {
                     Pseudocode.vars[loopId] = cur;
@@ -354,9 +380,35 @@ namespace fuliu.pseudocode
                 {
                     // 单线程处理，不用担心
                 }, commonParameters);
+                yield return new WaitForSeconds(duration);
             }
             callback?.Invoke(null);
         }
+        
+        public static void Delay(Pseudocode Pseudocode, string funcName, Action<object> callback, object[] parameters, object[] commonParameters)
+        {
+            float duration = parameters[0].GetFloat();
+            PseudocodeAction LoopDoSth = (PseudocodeAction) parameters[1];
+
+            if (!LoopDoSth)
+            {
+                Debug.LogError("Loop 方法第3个参数只接受NewAction方法返回的参数！");
+            }
+
+            CoroutineHelper.Instance.StartCoroutine(DelayCor(Pseudocode, funcName, callback, 
+                duration, LoopDoSth, commonParameters));
+        }
+        
+        private static IEnumerator DelayCor(Pseudocode Pseudocode, string funcName, Action<object> callback, 
+            float duration, PseudocodeAction act, object[] commonParameters)
+        {
+            yield return new WaitForSeconds(duration);
+            Pseudocode.RunQueue(Pseudocode.GetFuncParamFuncsQueue(act.funcs), () =>
+            {
+                callback?.Invoke(null);
+            }, commonParameters);
+        }
+        
 
         /// <summary>
         /// 并行处理多个动作，非多线程
@@ -515,7 +567,7 @@ namespace fuliu.pseudocode
             }
         }
         
-        public static void toList(Pseudocode Pseudocode, string funcName, Action<object> callback, object[] parameters, object[] commonParameters)
+        public static void ToList(Pseudocode Pseudocode, string funcName, Action<object> callback, object[] parameters, object[] commonParameters)
         {
             callback?.Invoke(new []{parameters[0]}.ToList());
         }

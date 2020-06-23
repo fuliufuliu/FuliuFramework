@@ -118,7 +118,7 @@ namespace fuliu.pseudocode
             }
             else
             {
-                Debug.LogError($"未找到“伪”方法 “{funName}” 对应的“真”方法！");
+                Debug.LogError($"未找到“伪”方法 {funName} 对应的“真”方法！");
                 callback(null);
             }
         }

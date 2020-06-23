@@ -15,25 +15,25 @@ public class ConfigDataManager : SingleBhv<ConfigDataManager>
             gameObject.SetActive(false);
             Destroy(gameObject);
         }
+        
+        _eeDataManager.Load();
     }
 
     private void Start()
     {
         DontDestroyOnLoad(gameObject);
-        Init();
     }
 
-    public override void Init()
-    {
-        isInited = true;
-        base.Init();
-        
-        _eeDataManager.Load();
-//        var list = Datas.Get<Data_Skin.Base_Row>(1001);
-//        foreach (var priceKeyValue in list.priceDic)
-//        {
-//            Debug.LogError($"------------- 1001 price : {priceKeyValue.Key}:{priceKeyValue.Value}");
-//        } 
-    }
+//     public override void Init()
+//     {
+//         isInited = true;
+//         base.Init();
+//         
+// //        var list = Datas.Get<Data_Skin.Base_Row>(1001);
+// //        foreach (var priceKeyValue in list.priceDic)
+// //        {
+// //            Debug.LogError($"------------- 1001 price : {priceKeyValue.Key}:{priceKeyValue.Value}");
+// //        } 
+//     }
 
 }

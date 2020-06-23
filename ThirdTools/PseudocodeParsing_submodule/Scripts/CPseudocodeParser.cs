@@ -103,7 +103,12 @@ namespace fuliu.pseudocode
         /// <returns></returns>
         string[] SplitToSentences(string txt, string sentenceSeperater = ";")
         {
-            var oss = txt.Split(new []{sentenceSeperater}, StringSplitOptions.None);
+            var oss = txt
+                .Replace("\n", "")
+                .Replace("\\n", "")
+                .Replace("\t", "")
+                .Replace("\\t", "") 
+                .Split(new []{sentenceSeperater}, StringSplitOptions.None);
             // 为了防止方法内的含有;符号而导致分割不正确，所以这里做了处理
             List<string> ss = new List<string>(oss.Length);
             bool isOk = true;
