@@ -543,5 +543,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isInitialled: 0
   freeLookCam: {fileID: 3478308138214382219}
+  cameraDistanceCtrl: {fileID: 3591519909899253616}
   myCamera: {fileID: 3574405266547718327}
   target: {fileID: 358237078}
