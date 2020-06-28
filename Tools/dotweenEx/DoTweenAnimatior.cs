@@ -97,6 +97,14 @@ public class DoTweenAnimatior : BaseAnimator
             play();
     }
 
+    protected void OnDisable()
+    {
+        if (tweener != null)
+        {
+            tweener.Kill();
+        }
+    }
+
 
     public Tweener play()
     {
