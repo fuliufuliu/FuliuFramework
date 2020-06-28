@@ -3,15 +3,17 @@ using UnityStandardAssets.Cameras;
 
 public class CameraManager : SingleBhv<CameraManager> {
     public FreeLookCam freeLookCam; 
+    public ProtectCameraFromWallClip cameraDistanceCtrl; 
     public Camera myCamera;
 
     public Transform target;
 
-    // Use this for initialization
-//    void Awake ()
-//	{
-//	    freeLookCam = GetComponentInChildren<FreeLookCam>();
-//        myCamera = GetComponentInChildren<Camera>();
-//	}
-
+    public void SetDistance(float distance)
+    {
+        print($"distance: {distance}");
+        if (distance > 0)
+        {
+            cameraDistanceCtrl.closestDistance = distance * 4;
+        }
+    }
 }
