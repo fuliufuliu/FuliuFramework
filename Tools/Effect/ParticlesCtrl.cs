@@ -8,6 +8,7 @@ namespace fuliu
     {
         private ParticleSystem[] allParticles;
         private static MethodInfo SetEnabledFunc;
+        private PropertyInfo startColorProperty;
 
         private void Awake()
         {
@@ -15,8 +16,17 @@ namespace fuliu
             {
 #if UNITY_2019
                 SetEnabledFunc = typeof(ParticleSystem.EmissionModule).GetMethod("set_enabled");
+                startColorProperty = typeof(ParticleSystem.MainModule).GetProperty("startColor");
 #elif UNITY_2018
                 SetEnabledFunc = typeof(ParticleSystem.EmissionModule).GetMethod("SetEnabled", BindingFlags.Static | BindingFlags.NonPublic);
+#endif
+            }
+            if (startColorProperty == null)
+            {
+#if UNITY_2019
+                startColorProperty = typeof(ParticleSystem.MainModule).GetProperty("startColor");
+#elif UNITY_2018
+                ???
 #endif
             }
             allParticles = GetComponentsInChildren<ParticleSystem>(true);
@@ -32,7 +42,21 @@ namespace fuliu
 #elif UNITY_2018
                     SetEnabledFunc.Invoke(null, new Object[] {allParticles[i], isEmit});
 #endif
-                    
+                }
+        }
+        
+        public void SetStartColor(Color color)
+        {
+            if (allParticles == null || allParticles.Length == 0)
+            {
+                return;
+            }
+            var data = allParticles[0].main.startColor;
+            if (allParticles != null) 
+                for (int i = 0; i < allParticles.Length; i++)
+                {
+                    data.color = color;
+                    startColorProperty.SetMethod.Invoke(allParticles[i].main, new Object[] {data});
                 }
         }
     }

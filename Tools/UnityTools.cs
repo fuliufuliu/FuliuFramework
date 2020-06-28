@@ -23,6 +23,11 @@ namespace fuliu
 
             return null;
         }
+        
+        public static T GetSafeComponent<T>(this Component component) where T : Component
+        {
+            return SafeGetComponent<T>(component);
+        }
 
         public static void DestroyAllChildren(this Transform transform)
         {
