@@ -6,7 +6,7 @@ namespace fuliu
 {
     public class ParticlesCtrl : MonoBehaviour
     {
-        private ParticleSystem[] allParticles;
+        public ParticleSystem[] allParticles;
         private static MethodInfo SetEnabledFunc;
         private PropertyInfo startColorProperty;
 
@@ -29,7 +29,11 @@ namespace fuliu
                 ???
 #endif
             }
-            allParticles = GetComponentsInChildren<ParticleSystem>(true);
+
+            if (allParticles == null || allParticles.Length == 0)
+            {
+                allParticles = GetComponentsInChildren<ParticleSystem>(true);
+            }
         }
 
         public void SetEmission(bool isEmit)
