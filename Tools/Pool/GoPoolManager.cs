@@ -108,16 +108,31 @@ public class GoPoolManager : SingleBhv<GoPoolManager>
         {
             transPosRotScale = templetesDic[poolKey].transform;
         }
-        SetNewGoProps(newGo, parent, transPosRotScale);
-        newGo.gameObject.SetActive(true);
+        SetNewGoProps(newGo, parent, transPosRotScale).SetActive(true);
         return newGo;
     }
 
-    public void SetNewGoProps(GameObject newGo, Transform parent, Transform transPosRotScale)
+    public GameObject SetNewGoProps(GameObject newGo, Transform parent, Transform transPosRotScale)
     {
         newGo.transform.SetParent(parent);
         newGo.transform.position = transPosRotScale.position;
         newGo.transform.rotation = transPosRotScale.rotation;
         newGo.transform.localScale = transPosRotScale.localScale;
+        return newGo;
+    }
+    
+    public GameObject SetNewGoProps(GameObject newGo, Transform parent, Vector3 pos, bool isLocal = false)
+    {
+        newGo.transform.SetParent(parent);
+        newGo.transform.Reset();
+        if (isLocal)
+        {
+            newGo.transform.localPosition = pos;
+        }
+        else
+        {
+            newGo.transform.position = pos;
+        }
+        return newGo;
     }
 }
