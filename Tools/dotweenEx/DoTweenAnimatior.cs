@@ -32,7 +32,6 @@ public enum DotweenType
 
 public class DoTweenAnimatior : BaseAnimator
 {
-
     [NonSerialized]
     public Tweener tweener;
     [Tooltip("是否使用组件当前状态作为动画起始状态？如果不是，则需要设置起始状态")]
@@ -92,9 +91,10 @@ public class DoTweenAnimatior : BaseAnimator
         if (tweener != null)
         {
             tweener.Kill();
+            tweener = null;
         }
         if(isEnable)
-            play();
+            tweener = play();
     }
 
     protected void OnDisable()
@@ -102,6 +102,7 @@ public class DoTweenAnimatior : BaseAnimator
         if (tweener != null)
         {
             tweener.Kill();
+            tweener = null;
         }
     }
 
