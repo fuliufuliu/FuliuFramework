@@ -24,7 +24,9 @@ namespace fuliu
             if (allTrailRenderers != null) 
                 for (int i = 0; i < allTrailRenderers.Length; i++)
                 {
+                    allTrailRenderers[i].Clear();
                     allTrailRenderers[i].startColor = color;
+                    allTrailRenderers[i].endColor = color;
                 }
         }
     }

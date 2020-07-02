@@ -68,10 +68,13 @@ public abstract class DataManager<T> : SingleBhv<T>, IDataManager  where T : Mon
     public void Save<T>(T obj, bool isSaveNow = false) where T : new()
     {
 //        Debug.Log($"Save  {typeof(T).Name}  json：{JsonUtil.ToJson(obj)}");
-        PlayerPrefs.SetString(saveKey + obj.GetType().Name, JsonUtil.ToJson(obj));
-        if (isSaveNow)
+        if (obj != null)
         {
-            PlayerPrefs.Save(); 
+            PlayerPrefs.SetString(saveKey + obj.GetType().Name, JsonUtil.ToJson(obj));
+            if (isSaveNow)
+            {
+                PlayerPrefs.Save(); 
+            }
         }
     }
 
