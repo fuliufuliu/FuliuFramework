@@ -124,15 +124,20 @@ namespace CsMessage
         /// <summary>
         /// 移除消息
         /// </summary>
-        /// <param name="msg"></param>
-        /// <param name="isBubb"></param>
         public static void remove(string msg, MonoBehaviour target=null,int id=100000) {
             int targetId = target == null ? id : target.GetInstanceID();
             if (msgIdEventDic.ContainsKey(msg))
             {
                 if (msgIdEventDic[msg].ContainsKey(targetId))
                 {
-                    msgIdEventDic[msg].Remove(targetId);
+                    try
+                    {
+                        msgIdEventDic[msg].Remove(targetId);
+                    }
+                    catch (Exception ex)
+                    {
+                        onLogError($"Remove Msg:{msg} # {targetId} (尝试延后一点时间再删除) 报错：{ex}");
+                    }
                 }
             }
         }
