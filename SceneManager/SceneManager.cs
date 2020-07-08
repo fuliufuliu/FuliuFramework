@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace fuliu
@@ -44,6 +45,9 @@ namespace fuliu
             this.uiPrefabPathRoot = uiPrefabPathRoot;
         }
 
+        /// <summary>
+        /// 打开一个UI界面
+        /// </summary>
         public GameObject OpenUI(string uiName, params object[] parameters)
         {
             if (!uiRoot)
@@ -67,6 +71,16 @@ namespace fuliu
 
             uiDic[uiName] = uiGo;
             return uiGo;
+        }
+        
+        /// <summary>
+        /// 打开一个UI界面，并关闭其他所有界面
+        /// </summary>
+        public GameObject OpenOnlyUI(string uiName, params object[] parameters)
+        {
+            var go = OpenUI(uiName, parameters);
+            CloseAllUI(new HashSet<string>() {uiName});
+            return go;
         }
         
         /// <summary>
@@ -100,6 +114,33 @@ namespace fuliu
                 Destroy(uiDic[uiName]);
                 uiDic.Remove(uiName);
                 return true;
+            }
+
+            return false;
+        }
+        
+        public bool CloseAllUI(HashSet<string> butThese)
+        {
+            if (!uiRoot)
+            {
+                Debug.LogError($"SceneManager 需要初始化属性：uiRoot！");
+                return false;
+            }
+
+            var dic = new Dictionary<string, GameObject>();
+            foreach (var pair in uiDic)
+            {
+                if (butThese.Contains(pair.Key))
+                {
+                    continue;
+                }
+                dic.Add(pair.Key, pair.Value);
+            }
+
+            foreach (var uiGoPair in dic)
+            {
+                Destroy(uiGoPair.Value);
+                uiDic.Remove(uiGoPair.Key);
             }
 
             return false;
