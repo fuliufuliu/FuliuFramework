@@ -9,6 +9,7 @@ namespace fuliu
         private RectTransform uiRoot;
         private string uiPrefabPathRoot;
         Dictionary<string, GameObject> uiDic = new Dictionary<string, GameObject>();
+        Dictionary<GameObject, string> goDic = new Dictionary<GameObject, string>();
 
         /// <summary>
         /// 打开Unity场景， 无需初始化即可使用
@@ -44,7 +45,7 @@ namespace fuliu
             }
             this.uiPrefabPathRoot = uiPrefabPathRoot;
         }
-
+        
         /// <summary>
         /// 打开一个UI界面
         /// </summary>
@@ -69,10 +70,17 @@ namespace fuliu
                 ui.InitParams(parameters);
             }
 
-            uiDic[uiName] = uiGo;
+            Record(uiName, uiGo);
+
             return uiGo;
         }
-        
+
+        private void Record(string uiName, GameObject uiGo)
+        {
+            uiDic[uiName] = uiGo;
+            goDic[uiGo] = uiName;
+        }
+
         /// <summary>
         /// 打开一个UI界面，并关闭其他所有界面
         /// </summary>
@@ -111,11 +119,27 @@ namespace fuliu
 
             if (uiDic.ContainsKey(uiName))
             {
-                Destroy(uiDic[uiName]);
+                var go = uiDic[uiName];
+                goDic.Remove(go);
                 uiDic.Remove(uiName);
+                Destroy(go);
                 return true;
             }
 
+            return false;
+        }
+        
+        public bool CloseUI(GameObject uiObj)
+        {
+            if (!uiRoot)
+            {
+                Debug.LogError($"SceneManager 需要初始化属性：uiRoot！");
+                return false;
+            }
+
+            if (goDic.ContainsKey(uiObj)) 
+                return CloseUI(goDic[uiObj]);
+            
             return false;
         }
         
@@ -127,20 +151,19 @@ namespace fuliu
                 return false;
             }
 
-            var dic = new Dictionary<string, GameObject>();
+            var list = new List<string>();
             foreach (var pair in uiDic)
             {
                 if (butThese.Contains(pair.Key))
                 {
                     continue;
                 }
-                dic.Add(pair.Key, pair.Value);
+                list.Add(pair.Key);
             }
 
-            foreach (var uiGoPair in dic)
+            foreach (var uiName in list)
             {
-                Destroy(uiGoPair.Value);
-                uiDic.Remove(uiGoPair.Key);
+                CloseUI(uiName);
             }
 
             return false;
