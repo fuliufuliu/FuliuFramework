@@ -54,7 +54,7 @@ namespace EasyExcel
 	
 	public static class EEConstant
 	{
-		public const string Version = "3.4";
+		public const string Version = "Fuliu_3.4";
 	}
 
 	/// <summary>

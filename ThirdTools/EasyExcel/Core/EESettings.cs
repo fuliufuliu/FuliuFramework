@@ -48,6 +48,16 @@ namespace EasyExcel
 		[SerializeField]
 		private string generatedScriptPath;
 		
+		[EEComment("This is where the generated txt files will be, leaving it blank means you don't export it",
+			"生成的表的txt文件的目标路径, 不填表示不用导出")]
+		[SerializeField]
+		private string generatedGoAssetPath;
+				
+		[EEComment("This is where the generated golang files will be, leaving it blank means you don't export it",
+			"生成的Go文件的目标路径, 不填表示不用导出")]
+		[SerializeField]
+		private string generatedGolangScriptPath;
+		
 		[EEComment(@"Postfix of generated sheet data classes",
 			"生成的Excel页数据类名的前缀")]
 		[SerializeField]
@@ -72,6 +82,8 @@ namespace EasyExcel
 			"Excel文件名命名空间附加前缀（防止命名冲突）")]
 		[SerializeField]
 		private string nameSpacePrefix;
+		
+		
 
 		[SerializeField]
 		private EELang lang = EELang.EN;
@@ -159,6 +171,30 @@ namespace EasyExcel
 				if (generatedScriptPath == value)
 					return;
 				generatedScriptPath = value;
+				modified = true;
+			}
+		}		
+		
+		public string GeneratedGoAssetPath
+		{
+			get { return generatedGoAssetPath; }
+			set
+			{
+				if (generatedGoAssetPath == value)
+					return;
+				generatedGoAssetPath = value;
+				modified = true;
+			}
+		}	
+		
+		public string GeneratedGolangScriptPath
+		{
+			get { return generatedGolangScriptPath; }
+			set
+			{
+				if (generatedGolangScriptPath == value)
+					return;
+				generatedGolangScriptPath = value;
 				modified = true;
 			}
 		}
@@ -300,15 +336,23 @@ namespace EasyExcel
 			return Path.GetFileNameWithoutExtension(fileName) + "_" + sheetName + "Inspector";
 		}
 
-		public string GetAssetFileName(string fileName, string sheetName)
+		public string GetAssetFileName(string fileName, string sheetName, string fileExtension = null)
 		{
-			return Path.GetFileNameWithoutExtension(fileName) + "_" + sheetName + SheetDataPostfix + EESettingsFileExtension;
+			return Path.GetFileNameWithoutExtension(fileName) + "_" + sheetName + SheetDataPostfix + (fileExtension ?? EESettingsFileExtension);
 		}
 		
 		public string GetCSharpFileName(string fileName, string sheetName)
 		{
-			// The file name must not differ from the sheet class name
-			return GetSheetClassName(fileName, sheetName) + ".cs";
+			var s = GetSheetClassName(fileName, sheetName);
+			// 首字母大写
+			return s.Substring(0,1).ToUpper() + s.Substring(1) + ".cs";
+		}
+		
+		public string GetGolangFileName(string fileName, string sheetName)
+		{
+			var s = GetSheetClassName(fileName, sheetName);
+			// 首字母大写
+			return s.Substring(0,1).ToUpper() + s.Substring(1) + ".go";
 		}
 		
 		public string GetSheetInspectorFileName(string fileName, string sheetName)

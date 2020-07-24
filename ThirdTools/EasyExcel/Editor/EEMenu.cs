@@ -23,6 +23,10 @@ namespace EasyExcel
 			
 			EditorPrefs.SetString(EEConverter.excelPathKey, excelPath);
 			EEConverter.GenerateCSharpFiles(excelPath, Environment.CurrentDirectory + "/" + EESettings.Current.GeneratedScriptPath);
+			if (! string.IsNullOrWhiteSpace(EESettings.Current.GeneratedGolangScriptPath))
+			{
+				EEConverter.GenerateGolangFiles(excelPath, Environment.CurrentDirectory + "/" + EESettings.Current.GeneratedGolangScriptPath);
+			}
 		}
 
 		[MenuItem(@"Tools/EasyExcel/Clean", false, 101)]

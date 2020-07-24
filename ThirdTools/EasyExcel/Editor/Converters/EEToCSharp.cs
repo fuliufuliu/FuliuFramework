@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using fuliu;
 using UnityEditor;
 
 namespace EasyExcel
@@ -130,6 +132,125 @@ namespace EasyExcel
 			}
 		}
 		
+		public static void GenerateGolangFiles(string excelPath, string goPath)
+		{
+			try
+			{
+				excelPath = excelPath.Replace("\\", "/");
+				goPath = goPath.Replace("\\", "/");
+
+				if (!Directory.Exists(excelPath))
+				{
+					EditorUtility.DisplayDialog("EasyExcel", "Excel files path doesn't exist.", "OK");
+					return;
+				}
+
+				if (!Directory.Exists(goPath))
+				{
+					Directory.CreateDirectory(goPath);
+				}
+
+				var tmpPath = Environment.CurrentDirectory + "/EasyExcelTmp/";
+				if (Directory.Exists(tmpPath))
+					Directory.Delete(tmpPath, true);
+				Directory.CreateDirectory(tmpPath);
+
+				excelPath = excelPath.Replace("\\", "/");
+				goPath = goPath.Replace("\\", "/");
+				if (!goPath.EndsWith("/"))
+					goPath += "/";
+
+				var goChanged = false;
+				var filePaths = Directory.GetFiles(excelPath);
+				for (var i = 0; i < filePaths.Length; ++i)
+				{
+					var excelFilePath = filePaths[i].Replace("\\", "/");
+					if (i + 1 < filePaths.Length)
+						UpdateProgressBar(i + 1, filePaths.Length, "");
+					else
+						ClearProgressBar();
+					if (!IsExcelFile(excelFilePath))
+						continue;
+					string fileName = Path.GetFileName(excelFilePath);
+					var newGoTxtDic = ToGolangArray(excelFilePath);
+					foreach (var newGoInfo in newGoTxtDic)
+					{
+						var cSharpFileName = EESettings.Current.GetGolangFileName(fileName, newGoInfo.Key);
+						var tmpCsFilePath = tmpPath + cSharpFileName;
+						var csFilePath = goPath + cSharpFileName;
+						var shouldWrite = true;
+						if (File.Exists(csFilePath))
+						{
+							var oldCs = File.ReadAllText(csFilePath);
+							shouldWrite = oldCs != newGoInfo.Value;
+						}
+
+						if (!shouldWrite)
+							continue;
+						goChanged = true;
+						File.WriteAllText(tmpCsFilePath, newGoInfo.Value, Encoding.UTF8);
+					}
+				}
+
+				if (goChanged)
+				{
+					EditorPrefs.SetBool(csChangedKey, true);
+					var files = Directory.GetFiles(tmpPath);
+					foreach (var s in files)
+					{
+						var p = s.Replace("\\", "/");
+						File.Copy(s, goPath + p.Substring(p.LastIndexOf("/", StringComparison.Ordinal)), true);
+					}
+					Directory.Delete(tmpPath, true);
+					EELog.Log("Scripts are generated, wait for generating assets...");
+				}
+				else
+				{
+					EELog.Log("No GoLang files changed, begin generating assets...");
+					ClearProgressBar();
+					var historyExcelPath = EditorPrefs.GetString(excelPathKey);
+					if (!string.IsNullOrEmpty(historyExcelPath))
+					{
+						// 生成go资源
+						if (!string.IsNullOrWhiteSpace(EESettings.Current.GeneratedGoAssetPath))
+						{
+							GenerateGoAssets(historyExcelPath, Environment.CurrentDirectory + "/" + EESettings.Current.GeneratedGoAssetPath);
+						}
+					}
+				}
+			}
+			catch (Exception e)
+			{
+				EELog.LogError(e.ToString());
+				EditorPrefs.SetBool(csChangedKey, false);
+				ClearProgressBar();
+				AssetDatabase.Refresh();
+			}
+		}
+
+		private static Dictionary<string, string> ToGolangArray(string excelPath)
+		{
+			var lst = new Dictionary<string, string>();
+			var book = EEWorkbook.Load(excelPath);
+			if (book == null)
+				return lst;
+			string fileName = Path.GetFileName(excelPath);
+			foreach (var sheet in book.sheets)
+			{
+				if (sheet == null)
+					continue;
+				if (!IsValidSheet(sheet))
+				{
+					EELog.Log(string.Format("Skipped sheet [{0}] in file <{1}>.", sheet.name, fileName));
+					continue;
+				}
+				var sheetData = ToSheetData(sheet);
+				var csTxt = ToGolang(sheetData, sheet.name, fileName);
+				lst.Add(sheet.name, csTxt);
+			}
+			return lst;
+		}
+
 		private static Dictionary<string, string> ToCSharpArray(string excelPath)
 		{
 			var lst = new Dictionary<string, string>();
@@ -143,7 +264,7 @@ namespace EasyExcel
 					continue;
 				if (!IsValidSheet(sheet))
 				{
-					EELog.Log(string.Format("Skipped sheet {0} in file {1}.", sheet.name, fileName));
+					EELog.Log(string.Format("Skipped sheet [{0}] in file <{1}>.", sheet.name, fileName));
 					continue;
 				}
 				var sheetData = ToSheetData(sheet);
@@ -151,6 +272,146 @@ namespace EasyExcel
 				lst.Add(sheet.name, csTxt);
 			}
 			return lst;
+		}
+		
+		private static string ToGolang(SheetData sheetData, string sheetName, string fileName)
+		{
+			string keyFieldNames2String(List<string> keys)
+			{
+				StringBuilder builder = new StringBuilder();
+				for (int i = 0; i < keys.Count; i++)
+				{
+					builder.Append("\"").Append(keys[i]).Append("\",");
+				}
+
+				if (keys.Count > 0)
+				{
+					builder.Remove(builder.Length - 1, 1);
+				}
+				return builder.ToString();
+			}
+			
+			try
+			{
+				var rowDataClassName = EESettings.Current.GetRowDataClassName(fileName, sheetName);
+				var csFile = new StringBuilder(2048);
+				csFile.Append("//------------------------------------------------------------------------------\n");
+				csFile.Append("// <auto-generated>\n");
+				csFile.Append("//     This code was generated by EasyExcel.\n"); 
+				csFile.Append("//     Runtime Version: " + EEConstant.Version + "\n");
+				csFile.Append("//\n");
+				csFile.Append("//     Changes to this file may cause incorrect behavior and will be lost if\n");
+				csFile.Append("//     the code is regenerated.\n");
+				csFile.Append("// </auto-generated>\n");
+				csFile.Append("//------------------------------------------------------------------------------");
+
+				csFile.Append("\npackage gamedata\n");
+				csFile.Append("\nimport \"github.com/name5566/leaf/recordfile\"\n");
+				csFile.Append("type " + rowDataClassName + " struct {\n");
+
+				var columnCount = sheetData.ColumnCount;
+
+				// Get field names
+				var fieldsName = new string[columnCount];
+				var fieldsDis = new string[columnCount];
+				for (var col = 0; col < columnCount; col++){
+					fieldsDis[col] = sheetData.Get(EESettings.Current.DiscriptionRowIndex, col);
+					fieldsName[col] = sheetData.Get(EESettings.Current.NameRowIndex, col);
+				}
+				
+				// Get field types and Key column
+				var fieldsLength = new string[columnCount];
+				var fieldsType = new string[columnCount];
+				List<string> keyFieldNamesFull = new List<string>();
+				List<string> keyFieldNames = new List<string>();
+				
+				for (var col = 0; col < columnCount; col++)
+				{
+					var cellInfo = sheetData.Get(EESettings.Current.TypeRowIndex, col);
+					fieldsLength[col] = null;
+					fieldsType[col] = cellInfo;
+					if (cellInfo.EndsWith("]"))
+					{
+						var startIndex = cellInfo.IndexOf('[');
+						fieldsLength[col] = cellInfo.Substring(startIndex + 1, cellInfo.Length - startIndex - 2);
+						fieldsType[col] = cellInfo.Substring(0, startIndex);
+					}
+
+					var varName = fieldsName[col];
+					var varLen = fieldsLength[col];
+					var varType = fieldsType[col];
+					if (varName.EndsWith(":Key") || varName.EndsWith(":key") || varName.EndsWith(":KEY"))
+					{
+						var splits = varName.Split(':');
+						if ((varType.Equals("int") || varType.Equals("string")) && varLen == null)
+						{
+							keyFieldNamesFull.Add(varName);
+							fieldsName[col] = splits[0];
+							keyFieldNames.Add(fieldsName[col]);
+						}
+					}
+				}
+				
+				if (keyFieldNamesFull.Count == 0)
+					EELog.LogError("Cannot find Key column in sheet " + sheetName);
+				
+				List<string> keyTypes = new List<string>(4);
+				for (var col = 0; col < columnCount; col++)
+				{
+					var varName = fieldsName[col];
+					// 大写的字段是公有的，小写字段表示私有
+					if(!string.IsNullOrWhiteSpace(varName) && varName.Length > 1)
+						varName = varName.Substring(0, 1).ToUpper() + varName.Substring(1);
+					var varLen = fieldsLength[col];
+					var varType = GetGoType(fieldsType[col]);
+					
+					bool isKeyField = keyFieldNamesFull.Count > 0 && keyFieldNames.Contains(varName);
+					if (IsSupportedColumnType(varType))
+					{
+						if (isKeyField)
+							keyTypes.Add(varType);
+						if (varLen == null)
+						{
+							csFile.AppendFormat("\t{0} {1} // {2};\n", varName, varType, fieldsDis[col].Replace("\n", " "));
+						}
+						else
+						{
+							csFile.AppendFormat("\t{0} []{1} // {2};\n", varName, varType, fieldsDis[col].Replace("\n", " "));
+						}
+					}
+				}
+				csFile.Append("}\n\n");
+				
+				// 是key的字段列表
+				csFile.Append($"\nvar {rowDataClassName}_Keys = []string{{{keyFieldNames2String(keyFieldNames)}}}\n\n");
+				
+				csFile.Append($"\nfunc Load_{rowDataClassName}()  *recordfile.RecordFile{{\n" +
+				              $"	return readRf({rowDataClassName}{{}})\n" +
+				              "}");
+				
+				return csFile.ToString();
+			}
+			catch (Exception ex)
+			{
+				EELog.LogError(ex.ToString());
+			}
+
+			return "";
+		}
+
+		private static string GetGoType(string csType)
+		{
+			switch (csType)
+			{
+				case "float":
+					return "float32";
+				case "double":
+					return "float64";
+				case "long":
+					return "int64";
+				default:
+					return csType;
+			}
 		}
 
 		private static string ToCSharp(SheetData sheetData, string sheetName, string fileName)

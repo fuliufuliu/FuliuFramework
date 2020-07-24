@@ -168,6 +168,26 @@ namespace EasyExcel
 			GUILayout.EndHorizontal();
 			if (settings.ShowHelp)
 				GUILayout.Space(tipSpace);
+
+			GUILayout.Space(5);
+			if (settings.ShowHelp)
+				GUILayout.Label(GetSettingFieldComment("generatedGoAssetPath"), EEGUIStyle.helpBox, GUILayout.Width(helpLength));
+			GUILayout.BeginHorizontal();
+			GUILayout.Label(settings.Lang == EELang.CN ? "生成资源文件路径" : "AssetPath", EEGUIStyle.label, nameOptions);
+			settings.GeneratedGoAssetPath = EditorGUILayout.TextField(settings.GeneratedGoAssetPath, EEGUIStyle.textField, valueOptions);
+			GUILayout.EndHorizontal();
+			if (settings.ShowHelp)
+				GUILayout.Space(tipSpace);
+						
+			GUILayout.Space(5);
+			if (settings.ShowHelp)
+				GUILayout.Label(GetSettingFieldComment("generatedGolangScriptPath"), EEGUIStyle.helpBox, GUILayout.Width(helpLength));
+			GUILayout.BeginHorizontal();
+			GUILayout.Label(settings.Lang == EELang.CN ? "生成Golang文件路径" : "Golang Path", EEGUIStyle.label, nameOptions);
+			settings.GeneratedGolangScriptPath = EditorGUILayout.TextField(settings.GeneratedGolangScriptPath, EEGUIStyle.textField, valueOptions);
+			GUILayout.EndHorizontal();
+			if (settings.ShowHelp)
+				GUILayout.Space(tipSpace);
 		}
 
 		private string GetSettingFieldComment(string fieldName)
