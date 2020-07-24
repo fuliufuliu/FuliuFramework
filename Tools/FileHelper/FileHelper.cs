@@ -224,7 +224,10 @@ public static class FileHelper {
             if (!IsExistFile(filePath))
             {
                 string directoryPath = GetDirectoryPathFromFilePath(filePath);
-                CreateDirectory(directoryPath);
+                if (! IsExistDirectory(directoryPath))
+                {
+                    CreateDirectory(directoryPath);
+                }
                 //创建一个FileInfo对象
                 FileInfo file = new FileInfo(filePath);
                 //创建文件
