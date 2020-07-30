@@ -166,13 +166,17 @@ namespace EasyExcel
 				itemPath = itemPath.Substring(itemPath.IndexOf("Assets", StringComparison.Ordinal));
 
 				var keyIndexes = new List<int>();
+				var validIndexes = new List<int>();
 				StringBuilder content = new StringBuilder();
 				StringBuilder titleStr = new StringBuilder();
 				for (var col = 0; col < sheetData.ColumnCount; ++col)
 				{
 					var cell = sheetData.Get(EESettings.Current.NameRowIndex, col);
-					if(!string.IsNullOrWhiteSpace(cell) && cell.Length > 1)
+					if (!string.IsNullOrWhiteSpace(cell) && cell.Length > 1)
+					{
 						cell = cell.Substring(0, 1).ToUpper() + cell.Substring(1);
+						validIndexes.Add(col);
+					}
 					if (cell.ToLower().Contains("key"))
 					{
 						keyIndexes.Add(col);
@@ -190,9 +194,15 @@ namespace EasyExcel
 				for (var row = EESettings.Current.DataStartIndex; row < sheetData.RowCount; ++row)
 				{
 					newRowStr.Clear();
+					
 					isKeyInvalid = false;
+					
 					for (var col = 0; col < sheetData.ColumnCount; ++col)
 					{
+						if (! validIndexes.Contains(col))
+						{
+							continue;
+						}
 						var cell = sheetData.Get(row, col);
 						if (keyIndexes.Contains(col) && string.IsNullOrWhiteSpace(cell))
 						{
@@ -207,7 +217,7 @@ namespace EasyExcel
 					{
 						continue;
 					}
-					content.Append(newRowStr.Remove(titleStr.Length - 1, 1).Append("\n"));
+					content.Append(newRowStr.Remove(newRowStr.Length - 1, 1).Append("\n"));
 				}
 
 				if (! FileHelper.IsExistFile(itemPath))
