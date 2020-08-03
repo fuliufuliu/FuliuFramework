@@ -184,10 +184,11 @@ namespace EasyExcel
 						cell = splits[0];
 					}
 					var varType = GetGoType(cell);
-					titleStr.Append(varType).Append("\t");
+					titleStr.Append(varType).Append(EESettings.Current.GoTxtFieldSplitStr);
 				}
 
-				content.Append(titleStr.Remove(titleStr.Length - 1, 1).Append("\n"));
+				content.Append(titleStr.Remove(titleStr.Length - EESettings.Current.GoTxtFieldSplitStr.Length, EESettings.Current.GoTxtFieldSplitStr.Length)
+					.Append(EESettings.Current.GoTxtRowSplitStr));
 
 				StringBuilder newRowStr = new StringBuilder();
 				var isKeyInvalid = false;
@@ -210,21 +211,22 @@ namespace EasyExcel
 							break;
 						}
 
-						newRowStr.Append(cell).Append("\t");
+						newRowStr.Append(cell).Append(EESettings.Current.GoTxtFieldSplitStr);
 					}
 
 					if (isKeyInvalid)
 					{
 						continue;
 					}
-					content.Append(newRowStr.Remove(newRowStr.Length - 1, 1).Append("\n"));
+					content.Append(newRowStr.Remove(newRowStr.Length - EESettings.Current.GoTxtFieldSplitStr.Length, EESettings.Current.GoTxtFieldSplitStr.Length)
+						.Append(EESettings.Current.GoTxtRowSplitStr));
 				}
 
 				if (! FileHelper.IsExistFile(itemPath))
 				{
 					FileHelper.CreateFile(itemPath);
 				}
-				FileHelper.WriteText(itemPath, content.ToString(0, content.Length - 1));
+				FileHelper.WriteText(itemPath, content.ToString());
 			}
 			catch (Exception ex)
 			{

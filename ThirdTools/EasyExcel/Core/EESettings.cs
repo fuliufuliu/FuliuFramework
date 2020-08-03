@@ -83,6 +83,15 @@ namespace EasyExcel
 		[SerializeField]
 		private string nameSpacePrefix;
 		
+		[EEComment(@"Output golang TXT data file, used for field Split",
+			"输出golang的txt数据文件时，用于字段分割")]
+		[SerializeField]	
+		private string goTxtFieldSplitStr = "``";
+		
+		[EEComment(@"Output golang TXT data file, used for row Split",
+			"输出golang的txt数据文件时，用于行分割")]
+		[SerializeField]
+		private string goTxtRowSplitStr = "!####!\n";
 		
 
 		[SerializeField]
@@ -259,6 +268,31 @@ namespace EasyExcel
 			}
 		}
 		
+		public string GoTxtFieldSplitStr
+		{
+			get { return goTxtFieldSplitStr; }
+			set
+			{
+				if (goTxtFieldSplitStr == value)
+					return;
+				goTxtFieldSplitStr = value;
+				modified = true;
+			}
+		}
+		
+		public string GoTxtRowSplitStr
+		{
+			get { return goTxtRowSplitStr; }
+			set
+			{
+				if (goTxtRowSplitStr == value)
+					return;
+				goTxtRowSplitStr = value;
+				modified = true;
+			}
+		}
+
+		
 		public EELang Lang
 		{
 			get { return lang; }
@@ -295,7 +329,8 @@ namespace EasyExcel
 		#region Sigleton
 
 		private static EESettings _current;
-		
+
+
 		public static EESettings Current
 		{
 			get

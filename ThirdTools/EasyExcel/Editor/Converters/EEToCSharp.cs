@@ -162,6 +162,7 @@ namespace EasyExcel
 
 				var goChanged = false;
 				var filePaths = Directory.GetFiles(excelPath);
+				var loadGoFileBuilder = new StringBuilder().AppendLine("package gamedata").AppendLine().AppendLine("func LoadAllTables()  {");
 				for (var i = 0; i < filePaths.Length; ++i)
 				{
 					var excelFilePath = filePaths[i].Replace("\\", "/");
@@ -178,6 +179,7 @@ namespace EasyExcel
 						var cSharpFileName = EESettings.Current.GetGolangFileName(fileName, newGoInfo.Key);
 						var tmpCsFilePath = tmpPath + cSharpFileName;
 						var csFilePath = goPath + cSharpFileName;
+						loadGoFileBuilder.AppendLine($" Load_{EESettings.Current.GetSheetClassName(fileName, newGoInfo.Key)}_Map()");
 						var shouldWrite = true;
 						if (File.Exists(csFilePath))
 						{
@@ -191,7 +193,23 @@ namespace EasyExcel
 						File.WriteAllText(tmpCsFilePath, newGoInfo.Value, Encoding.UTF8);
 					}
 				}
-
+				// LoadAllTables.go
+				loadGoFileBuilder.AppendLine("}");
+				var loadGoFileBuilderStr = loadGoFileBuilder.ToString();
+				var tempLoadAllTablesFilePath = tmpPath + "LoadAllTables.go";
+				var targetLoadAllTablesFilePath = goPath + "LoadAllTables.go";
+				if (File.Exists(targetLoadAllTablesFilePath))
+				{
+					var oldCs = File.ReadAllText(targetLoadAllTablesFilePath);
+					goChanged = goChanged || oldCs != loadGoFileBuilderStr;
+				}
+				else
+				{
+					goChanged = true;
+				}
+				File.WriteAllText(tempLoadAllTablesFilePath, loadGoFileBuilderStr, Encoding.UTF8);
+				
+				//
 				if (goChanged)
 				{
 					EditorPrefs.SetBool(csChangedKey, true);
@@ -248,6 +266,7 @@ namespace EasyExcel
 				var csTxt = ToGolang(sheetData, sheet.name, fileName);
 				lst.Add(sheet.name, csTxt);
 			}
+			
 			return lst;
 		}
 
@@ -276,17 +295,60 @@ namespace EasyExcel
 		
 		private static string ToGolang(SheetData sheetData, string sheetName, string fileName)
 		{
-			string keyFieldNames2String(List<string> keys)
+			string _keyFieldNames2String(List<string> keys)
 			{
 				StringBuilder builder = new StringBuilder();
 				for (int i = 0; i < keys.Count; i++)
 				{
-					builder.Append("\"").Append(keys[i]).Append("\",");
+					var key = keys[i];
+					key = key.Substring(0, 1).ToUpper() + key.Substring(1);
+					builder.Append("\"").Append(key).Append("\",");
 				}
 
 				if (keys.Count > 0)
 				{
 					builder.Remove(builder.Length - 1, 1);
+				}
+				return builder.ToString();
+			}
+			
+			string _createGoMap(List<string> keyTypes, string valueStr)
+			{
+				StringBuilder builder = new StringBuilder();
+				for (int i = 0; i < keyTypes.Count; i++)
+				{
+					var keyType = keyTypes[i];
+					builder.Append("map[").Append(keyType).Append("]");
+				}
+				return builder.Append(valueStr).ToString();
+			}		
+			
+			string _fillGoMap(List<string> keyTypes, string _sheetName, string valueStr)
+			{
+				// {sheetName}_Map{fillGoMap(keyFieldTypes, sheetName)} = &record
+				var mapName = $"		{_sheetName}_Map";
+				StringBuilder builder = new StringBuilder();
+				for (int i = 0; i < keyTypes.Count; i++)
+				{
+					var keyType = keyTypes[i];
+					mapName += $"[keys[{i}].({keyType})]";
+					builder.Append(mapName).Append(" = ");
+					for (int j = i + 1; j < keyTypes.Count; j++)
+					{
+						var keyType2 = keyTypes[j];
+						builder.Append($"map[{keyType}]");
+					}
+
+					if (i == keyTypes.Count - 1)
+					{
+						// 最后一个,直接赋值
+						builder.AppendLine("&record");
+					}
+					else
+					{
+						// 不是最后一个的话，则新建
+						builder.AppendLine(valueStr);
+					}
 				}
 				return builder.ToString();
 			}
@@ -307,7 +369,8 @@ namespace EasyExcel
 				csFile.Append("//------------------------------------------------------------------------------");
 
 				csFile.Append("\npackage gamedata\n");
-				csFile.Append("\nimport \"github.com/name5566/leaf/recordfile\"\n");
+				// csFile.Append("\nimport \"github.com/fuliufuliu/leaf/recordfile\"\n");
+				csFile.Append("\nimport \"reflect\"\n");
 				csFile.Append("type " + sheetClassName + " struct {\n");
 
 				var columnCount = sheetData.ColumnCount;
@@ -325,6 +388,7 @@ namespace EasyExcel
 				var fieldsType = new string[columnCount];
 				List<string> keyFieldNamesFull = new List<string>();
 				List<string> keyFieldNames = new List<string>();
+				List<string> keyFieldTypes = new List<string>();
 				
 				for (var col = 0; col < columnCount; col++)
 				{
@@ -349,6 +413,7 @@ namespace EasyExcel
 							keyFieldNamesFull.Add(varName);
 							fieldsName[col] = splits[0];
 							keyFieldNames.Add(fieldsName[col]);
+							keyFieldTypes.Add( GetGoType(varType) );
 						}
 					}
 				}
@@ -356,6 +421,13 @@ namespace EasyExcel
 				if (keyFieldNamesFull.Count == 0)
 					EELog.LogError("Cannot find Key column in sheet " + sheetName);
 				
+				// type Config_Card_Sheet struct {
+				// 		CardId int // 卡牌id;
+				// 		CardClass int // 卡牌品类;
+				// 		CardName string // 卡牌名称;
+				// 		AppearanceLevel int // 出场等级;
+				// 		Skill1Id int // 技能1_ID;
+				// }
 				List<string> keyTypes = new List<string>(4);
 				for (var col = 0; col < columnCount; col++)
 				{
@@ -384,11 +456,37 @@ namespace EasyExcel
 				csFile.Append("}\n\n");
 				
 				// 是key的字段列表
-				csFile.Append($"\nvar {sheetClassName}_Keys = []string{{{keyFieldNames2String(keyFieldNames)}}}\n\n");
+				csFile.Append($"\nvar {sheetClassName}_Keys = []string{{{_keyFieldNames2String(keyFieldNames)}}}\n\n");
 				
-				csFile.Append($"\nfunc Load_{sheetClassName}()  *recordfile.RecordFile{{\n" +
-				              $"	return readRf({sheetClassName}{{}})\n" +
-				              "}");
+
+				// var Config_Card_Map = map[int]*Config_Card_Sheet{}
+				csFile.Append($"\nvar {sheetClassName}_Map = {_createGoMap(keyFieldTypes, "*" + sheetClassName + "{}")}\n\n");
+				
+				
+				// func Load_Config_Card_Map() {
+				// 	var sheet = readRf(Config_Card_Sheet{})
+				// 	for i := 0; i < sheet.NumRecord(); i++ {
+				// 		record := *sheet.Record(i).(*Config_Card_Sheet)
+				// 		var keys = make([]interface{}, len(Config_Card_Sheet_Keys))
+				// 		for j := 0; j < len(Config_Card_Sheet_Keys); j++ {
+				// 			valueOfKey := reflect.ValueOf(record).FieldByName(Config_Card_Sheet_Keys[j]).Interface().(int)
+				// 			keys[0] = valueOfKey
+				// 		}
+				// 		Config_Card_Map[keys[0].(int)] = &record
+				// 	}
+				// }
+				csFile.Append($"\nfunc Load_{sheetClassName}_Map() {{" +
+				              $"\n	var sheet = readRf({sheetClassName}{{}})" +
+				              $"\n	for i := 0; i < sheet.NumRecord(); i++ {{" +
+				              $"\n		record := *sheet.Record(i).(*{sheetClassName})" +
+				              $"\n		var keys = make([]interface{{}}, len({sheetClassName}_Keys))" +
+				              $"\n		for j := 0; j < len({sheetClassName}_Keys); j++ {{" +
+				              $"\n			valueOfKey := reflect.ValueOf(record).FieldByName({sheetClassName}_Keys[j]).Interface().(int)" +
+				              $"\n			keys[j] = valueOfKey" +
+				              $"\n		}}" +
+				              $"\n{_fillGoMap(keyFieldTypes, sheetClassName, "*" + sheetClassName + "{}")}" +
+				              $"\n	}}" +
+				              $"\n}}\n\n");
 				
 				return csFile.ToString();
 			}

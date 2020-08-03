@@ -188,6 +188,26 @@ namespace EasyExcel
 			GUILayout.EndHorizontal();
 			if (settings.ShowHelp)
 				GUILayout.Space(tipSpace);
+			
+			GUILayout.Space(5);
+			if (settings.ShowHelp)
+				GUILayout.Label(GetSettingFieldComment("goTxtFieldSplitStr"), EEGUIStyle.helpBox, GUILayout.Width(helpLength));
+			GUILayout.BeginHorizontal();
+			GUILayout.Label(settings.Lang == EELang.CN ? "生成Golang文件路径" : "Golang Path", EEGUIStyle.label, nameOptions);
+			settings.GoTxtFieldSplitStr = EditorGUILayout.TextField(settings.GoTxtFieldSplitStr, EEGUIStyle.textField, valueOptions);
+			GUILayout.EndHorizontal();
+			if (settings.ShowHelp)
+				GUILayout.Space(tipSpace);
+			
+			GUILayout.Space(5);
+			if (settings.ShowHelp)
+				GUILayout.Label(GetSettingFieldComment("goTxtRowSplitStr"), EEGUIStyle.helpBox, GUILayout.Width(helpLength));
+			GUILayout.BeginHorizontal();
+			GUILayout.Label(settings.Lang == EELang.CN ? "生成Golang文件路径" : "Golang Path", EEGUIStyle.label, nameOptions);
+			settings.GoTxtRowSplitStr = EditorGUILayout.TextField(settings.GoTxtRowSplitStr, EEGUIStyle.textField, valueOptions);
+			GUILayout.EndHorizontal();
+			if (settings.ShowHelp)
+				GUILayout.Space(tipSpace);
 		}
 
 		private string GetSettingFieldComment(string fieldName)
