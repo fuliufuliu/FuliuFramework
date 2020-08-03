@@ -168,5 +168,10 @@ namespace fuliu
 
             return false;
         }
+
+        public bool HasUI(string uiName)
+        {
+            return uiDic.ContainsKey(uiName);
+        }
     }
 }
