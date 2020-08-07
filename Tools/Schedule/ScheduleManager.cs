@@ -6,6 +6,9 @@ using UnityEngine;
 
 namespace fuliu.Schedule
 {
+     /// <summary>
+     /// 日程管理器
+     /// </summary>
      public class ScheduleManager : SingleBhv<ScheduleManager>
      {
           private ScheduleData scheduleData;

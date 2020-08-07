@@ -14,7 +14,6 @@ public class DesignSketch : MonoBehaviour
 
     private void OnValidate()
     {
-        Debug.Log("#####################");
         var myRawImage = GetComponent<RawImage>();
 
         if (myRawImage)
