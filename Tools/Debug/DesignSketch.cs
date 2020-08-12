@@ -5,6 +5,7 @@ using UnityEngine.UI;
 /// <summary>
 /// 效果图控制
 /// </summary>
+[ExecuteInEditMode]
 public class DesignSketch : MonoBehaviour
 {
     private Thread myThread;
