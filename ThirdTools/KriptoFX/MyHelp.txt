@@ -1,0 +1,5 @@
+若没有Bloom效果，那么：
+检查几个地方：
+1. 摄像机的属性：MSAA设置为off，或者去设置Graphics Settings中相应的参数
+2. 摄像机上是否挂上了ME_Moblie Bloom 脚本
+3. 是否使用了会发光的材质球，通常粒子上需要使用 KriptoFx/ME/Particle
